@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import LiquidBackground from "@/components/LiquidBackground";
@@ -30,20 +29,22 @@ type DpVideo = {
   course_id: string;
 };
 
+type Video = {
+  id: string;
+  title: string;
+  instructor: string | null;
+  video_url: string | null;
+  duration: number | null;
+  thumbnail_url: string | null;
+  order_index: number | null;
+  is_free: boolean | null;
+};
+
 type TopicWithVideos = {
   id: string;
   title: string;
   order_index: number | null;
-  videos: {
-    id: string;
-    title: string;
-    instructor: string | null;
-    video_url: string | null;
-    duration: number | null;
-    thumbnail_url: string | null;
-    order_index: number | null;
-    is_free: boolean | null;
-  }[];
+  videos: Video[];
 };
 
 type Resource = {
@@ -171,13 +172,11 @@ const CourseViewing: React.FC = () => {
         }
 
         // Sort videos inside each topic by order_index ascending (fallback nulls last)
-        const normalized = (topicsData ?? []).map((t: any) => ({
-          id: t.id as string,
-          title: t.title as string,
-          order_index: t.order_index as number | null,
+        const normalized = (topicsData ?? []).map((t: TopicWithVideos) => ({
+          ...t,
           videos: (t.videos ?? [])
             .slice()
-            .sort((a: any, b: any) => {
+            .sort((a: Video, b: Video) => {
               const av = a.order_index ?? Number.MAX_SAFE_INTEGER;
               const bv = b.order_index ?? Number.MAX_SAFE_INTEGER;
               return av - bv;
@@ -198,7 +197,7 @@ const CourseViewing: React.FC = () => {
         let initialized = false;
         if (deepVideoId) {
           for (const tp of normalized) {
-            const found = tp.videos.find((v: any) => v.id === deepVideoId);
+            const found = tp.videos.find((v: Video) => v.id === deepVideoId);
             if (found) {
               setSelectedVideo({ id: found.id, title: found.title, url: found.video_url ?? null });
               initialized = true;
@@ -266,7 +265,7 @@ const CourseViewing: React.FC = () => {
             throw new Error(resErr.message);
           }
           setResources(
-            (res ?? []).map((r: any) => ({
+            (res ?? []).map((r: Resource) => ({
               id: r.id,
               name: r.name,
               file_url: r.file_url,
@@ -276,15 +275,16 @@ const CourseViewing: React.FC = () => {
         } else {
           setResources([]);
         }
-      } catch (e: any) {
-        setError(e?.message ?? "Failed to load course");
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : String(e);
+        setError(message ?? "Failed to load course");
       } finally {
         setLoading(false);
       }
     }
 
     load();
-  }, [id, deepTopicId, searchParams, activeTab]);
+  }, [id, deepTopicId, searchParams, activeTab, setSearchParams, deepVideoId]);
 
   // After topics render, scroll the highlighted video into view smoothly (once)
   useEffect(() => {

@@ -48,8 +48,9 @@ async function askMistral(prompt: string, history: ChatMessage[]): Promise<strin
     const data = await res.json();
     const answer = data?.choices?.[0]?.message?.content || "I couldn't generate a response.";
     return answer;
-  } catch (e: any) {
-    return `❌ Network error contacting Mistral: ${e?.message || e}`;
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e)
+    return `❌ Network error contacting Mistral: ${message}`;
   }
 }
 
@@ -106,12 +107,12 @@ const AiTeacher: React.FC = () => {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
-  async function handleSend(e?: React.FormEvent | React.MouseEvent) {
+  async function handleSend(e?: React.FormEvent | React.MouseEvent | React.KeyboardEvent) {
     if (e) {
       e.preventDefault();
       // Some mobile browsers require explicit stopPropagation
       // to avoid form reflows blocking async work.
-      // @ts-ignore
+      // @ts-expect-error - e is a union type, but stopPropagation is available on all of them
       if (e.stopPropagation) e.stopPropagation();
     }
     const q = input.trim();
@@ -230,7 +231,7 @@ const AiTeacher: React.FC = () => {
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
-                    handleSend(e as any);
+                    handleSend(e);
                   }
                 }}
                 inputMode="text"

@@ -196,9 +196,10 @@ const Admin: React.FC = () => {
         .order("reports", { ascending: false });
 
       if (error) throw new Error(error.message);
-      setPosts((data ?? []) as Post[]);
-    } catch (e: any) {
-      setPostsError(e?.message ?? "Failed to load reported posts");
+      setPosts(data ?? []);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      setPostsError(message ?? "Failed to load reported posts");
     } finally {
       setLoadingPosts(false);
     }
@@ -215,9 +216,10 @@ const Admin: React.FC = () => {
         .limit(200);
 
       if (error) throw new Error(error.message);
-      setFeedback((data ?? []) as ContactMessage[]);
-    } catch (e: any) {
-      setFeedbackError(e?.message ?? "Failed to load feedback");
+      setFeedback(data ?? []);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      setFeedbackError(message ?? "Failed to load feedback");
     } finally {
       setLoadingFeedback(false);
     }
@@ -297,7 +299,7 @@ const Admin: React.FC = () => {
           title: t.title.trim(),
           order_index: t.order_index ?? null,
         }));
-      let topicIds: string[] = [];
+
       if (preparedTopics.length > 0) {
         const { data: tdata, error: terr } = await supabase
           .from("topics")
@@ -305,8 +307,6 @@ const Admin: React.FC = () => {
           .select("id,title")
           .order("id", { ascending: true }); // order to align with returned rows
         if (terr) throw new Error(terr.message);
-        // Map back by title order (best effort for this client-side draft)
-        topicIds = (tdata ?? []).map((row: any) => row.id as string);
       }
 
       // 3) Insert videos/resources per topic
@@ -321,7 +321,7 @@ const Admin: React.FC = () => {
           .order("order_index", { ascending: true })
           .order("title", { ascending: true, nullsFirst: true });
         if (lerr) throw new Error(lerr.message);
-        topicsFromDb = (tlist ?? []) as any[];
+        topicsFromDb = tlist ?? [];
       }
 
       // Build and insert per-topic videos and resources using title matching (since we don't have IDs in draft)
@@ -374,8 +374,9 @@ const Admin: React.FC = () => {
       setCourseLevel("Beginner");
       setCourseLanguage("English");
       setTopicsDraft([{ title: "", order_index: null, videos: [], resources: [] }]);
-    } catch (e: any) {
-      alert(e?.message ?? "Failed to create course with details");
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      alert(message ?? "Failed to create course with details");
     } finally {
       setCreating(false);
     }

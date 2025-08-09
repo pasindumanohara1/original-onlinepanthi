@@ -190,7 +190,7 @@ const AddCourse: React.FC = () => {
           .order("order_index", { ascending: true })
           .order("title", { ascending: true, nullsFirst: true });
         if (lerr) throw new Error(lerr.message);
-        topicsFromDb = (tlist ?? []) as any[];
+        topicsFromDb = tlist ?? [];
       }
 
       // 3) Insert videos/resources per topic (title-matched)
@@ -244,8 +244,9 @@ const AddCourse: React.FC = () => {
       setCourseLanguage("English");
       setTopicsDraft([{ title: "", order_index: null, videos: [], resources: [] }]);
       navigate("/dashboard");
-    } catch (e: any) {
-      alert(e?.message ?? "Failed to create course with details");
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      alert(message ?? "Failed to create course with details");
     } finally {
       setCreating(false);
     }

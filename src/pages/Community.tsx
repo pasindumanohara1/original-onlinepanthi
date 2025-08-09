@@ -1,5 +1,4 @@
-
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Send, Heart, MessageCircle, Share2, User, ThumbsUp, BookOpen, Users, AlertTriangle } from 'lucide-react';
 import LiquidBackground from '@/components/LiquidBackground';
 import GlassCard from '@/components/GlassCard';
@@ -31,7 +30,7 @@ const Community = () => {
   const [submitting, setSubmitting] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -63,15 +62,15 @@ const Community = () => {
     );
 
     // 3) Fetch profiles for these authors and build map
-    let nameById: Record<string, string> = {};
+    const nameById: Record<string, string> = {};
     if (authorIds.length > 0) {
       const { data: profilesData, error: profErr } = await supabase
         .from('profiles')
         .select('id, full_name')
         .in('id', authorIds);
       if (!profErr && profilesData) {
-        profilesData.forEach((row: any) => {
-          if (row?.id) nameById[row.id] = row.full_name ?? null;
+        profilesData.forEach((row: { id: string; full_name: string | null }) => {
+          if (row?.id) nameById[row.id] = row.full_name ?? '';
         });
       }
       // If profErr, we silently fall back to null names (UI shows 'User')
@@ -92,10 +91,13 @@ const Community = () => {
 
     setPosts(shaped);
     setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     fetchPosts();
+  }, [fetchPosts]);
+
+  useEffect(() => {
     // Preload current user + interactions to set initial liked/saved/reported UI
     (async () => {
       const { data: sess } = await supabase.auth.getSession();
@@ -110,7 +112,7 @@ const Community = () => {
         const likedMap: Record<string, boolean> = {};
         const savedMap: Record<string, boolean> = {};
         const reportedMap: Record<string, boolean> = {};
-        interactions.forEach((i: any) => {
+        interactions.forEach((i: { post_id: string; action: string }) => {
           if (i.action === 'like') likedMap[i.post_id] = true;
           if (i.action === 'save') savedMap[i.post_id] = true;
           if (i.action === 'report') reportedMap[i.post_id] = true;
@@ -185,14 +187,14 @@ const Community = () => {
       }
 
       const shaped: PostRow = {
-        id: (data as any).id,
-        author_id: (data as any).author_id,
-        content: (data as any).content,
-        image_url: (data as any).image_url,
-        category: (data as any).category,
-        likes: (data as any).likes,
-        reports: (data as any).reports,
-        created_at: (data as any).created_at,
+        id: data.id,
+        author_id: data.author_id,
+        content: data.content,
+        image_url: data.image_url,
+        category: data.category,
+        likes: data.likes,
+        reports: data.reports,
+        created_at: data.created_at,
         author_name: authorName,
       };
       setPosts((prev) => [shaped, ...prev]);
@@ -201,12 +203,13 @@ const Community = () => {
         title: 'Post published',
         description: 'Your post is now live.',
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
       console.error('[Community] Insert post exception:', e);
-      setError(e?.message || 'Failed to create post');
+      setError(message || 'Failed to create post');
       toast({
         title: 'Failed to publish post',
-        description: e?.message || 'Unknown error',
+        description: message || 'Unknown error',
         variant: 'destructive',
       });
     } finally {
@@ -258,11 +261,12 @@ const Community = () => {
         setLiked((prev) => ({ ...prev, [postId]: false }));
         setPosts((prev) => prev.map(p => p.id === postId ? { ...p, likes: next } : p));
       }
-    } catch (e: any) {
-      setError(e?.message || 'Failed to toggle like');
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      setError(message || 'Failed to toggle like');
       toast({
         title: 'Failed to like',
-        description: e?.message || 'Unknown error',
+        description: message || 'Unknown error',
         variant: 'destructive',
       });
     }
@@ -299,11 +303,12 @@ const Community = () => {
         if (delErr) throw delErr;
         setSaved((prev) => ({ ...prev, [postId]: false }));
       }
-    } catch (e: any) {
-      setError(e?.message || 'Failed to toggle save');
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      setError(message || 'Failed to toggle save');
       toast({
         title: 'Failed to save',
-        description: e?.message || 'Unknown error',
+        description: message || 'Unknown error',
         variant: 'destructive',
       });
     }
@@ -356,11 +361,12 @@ const Community = () => {
 
       setReported((prev) => ({ ...prev, [postId]: true }));
       setPosts((prev) => prev.map(p => p.id === postId ? { ...p, reports: nextReports } : p));
-    } catch (e: any) {
-      setError(e?.message || 'Failed to report post');
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      setError(message || 'Failed to report post');
       toast({
         title: 'Failed to report',
-        description: e?.message || 'Unknown error',
+        description: message || 'Unknown error',
         variant: 'destructive',
       });
     }
@@ -516,11 +522,12 @@ const Community = () => {
                                 title: 'Post deleted',
                                 description: 'Your post has been removed.',
                               });
-                            } catch (e: any) {
-                              setError(e?.message || 'Failed to delete post');
+                            } catch (e: unknown) {
+                              const message = e instanceof Error ? e.message : String(e);
+                              setError(message || 'Failed to delete post');
                               toast({
                                 title: 'Failed to delete post',
-                                description: e?.message || 'Unknown error',
+                                description: message || 'Unknown error',
                                 variant: 'destructive',
                               });
                             }

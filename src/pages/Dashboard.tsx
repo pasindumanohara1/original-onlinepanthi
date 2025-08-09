@@ -1,4 +1,3 @@
-
 import React, { useEffect, useMemo, useState } from 'react';
 import { BookOpen, TrendingUp, Clock, Award, Users, MessageCircle, Star, ChevronRight, PlusCircle } from 'lucide-react';
 import LiquidBackground from '@/components/LiquidBackground';
@@ -80,14 +79,14 @@ const Dashboard = () => {
     };
     load();
     return () => { mounted = false; };
-  }, [navigate]);
+  }, [navigate, birthday, country, fullName]);
 
   // Placeholder lists retained; real data wiring can replace these later
   const enrolledCourses: Array<{
     id: number; title: string; progress: number; nextLesson: string; dueDate: string; thumbnail: string;
   }> = [];
 
-  const recentActivity: Array<{ type: string; title: string; course: string; time: string; icon: any; }> = [];
+  const recentActivity: Array<{ type: string; title: string; course: string; time: string; icon: React.ElementType; }> = [];
 
   const achievements: Array<{ name: string; description: string; earned: boolean; }> = [];
 

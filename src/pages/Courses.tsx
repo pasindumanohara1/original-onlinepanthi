@@ -73,8 +73,9 @@ const Courses = () => {
           throw new Error(error.message);
         }
         setCourses((data ?? []) as CourseRow[]);
-      } catch (e: any) {
-        setError(e?.message ?? 'Failed to load courses');
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : String(e);
+        setError(message ?? 'Failed to load courses');
       } finally {
         setLoading(false);
       }
@@ -110,7 +111,7 @@ const Courses = () => {
   const filteredCourses = useMemo(() => {
     const q = debouncedSearch.toLowerCase();
 
-    let list = courses.filter((course) => {
+    const list = courses.filter((course) => {
       // Search
       const matchesSearch =
         (course.name ?? '').toLowerCase().includes(q) ||

@@ -20,9 +20,10 @@ const SupabaseHealth: React.FC = () => {
         }
         setStatus("ok");
         setMessage(data?.session ? "Authenticated session detected." : "No session (not signed in).");
-      } catch (e: any) {
+      } catch (e: unknown) {
         setStatus("error");
-        setMessage(e?.message ?? "Unknown error");
+        const message = e instanceof Error ? e.message : String(e);
+        setMessage(message);
       }
     };
     check();
